@@ -1,0 +1,60 @@
+from PyPDF2 import PdfReader
+# Load PDF
+reader = PdfReader("squ.pdf")
+text = ""
+# Read all pages
+for page in reader.pages:
+    if page.extract_text():
+        text += page.extract_text()
+# Clean text (optional but good)
+text = text.replace("\n", " ")
+uploaded_file = st.file_uploader("Upload PDF", type="pdf")
+if uploaded_file is not None:
+    pdf_reader = PyPDF2.PdfReader(uploaded_file)
+    text = ""
+    # Read all pages
+
+    for page in pdf_reader.pages:
+
+        text += page.extract_text()
+
+    # Split into chunks
+
+    chunk_size = 500   # characters per chunk
+
+    chunks = []
+
+    for i in range(0, len(text), chunk_size):
+
+        chunks.append(text[i:i+chunk_size])
+
+    st.write(chunks)
+vectorizer = TfidfVectorizer()
+vectors = vectorizer.fit_transform(sentences)
+faqs = {
+    "when can i drop a course": "You can drop or add a course during the first week with no effect on your transcript.",
+    "when do i get w grade": "You get a W grade if you withdraw between week 2 and week 10.",
+    "what happens if i drop after week 10": "You will receive an F grade.",
+    "how to choose a major": "You must complete prerequisite courses and meet department criteria.",}
+user_question_lower = user_question.lower()
+
+# Check FAQs first
+found = False
+for question in faqs:
+    if question in user_question_lower:
+        answer = faqs[question]
+        found = True
+        break
+
+# If not FAQ → use embeddings
+if not found:
+    question_vector = vectorizer.transform([user_question])
+    similarity = cosine_similarity(question_vector, vectors)
+    index = similarity.argmax()
+    answer = sentences[index]
+
+# Save bot response
+st.session_state.messages.append({"role": "assistant", "content": answer})
+
+with st.chat_message("assistant"):
+    st.write(answer)
